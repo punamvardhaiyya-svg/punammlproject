@@ -1,147 +1,136 @@
 
-# os module ko import kar rahe hain
-# Iska use folders aur file paths create karne ke liye hota hai
+# Import os module to create folders and manage file paths
 import os
 
-# sys module ko import kar rahe hain
-# Iska use system-related information aur exception details ke liye hota hai
+# Import sys module for exception details
 import sys
 
-# CustomException class ko import kar rahe hain
-# Ye errors ko detailed format mein handle karne ke liye use hoti hai
+# Import CustomException to handle errors with details
 from src.exception import CustomException
 
-# Logging ko import kar rahe hain
-# Isse program ke execution steps aur errors record kar sakte hain
+# Import logging to record program execution and errors
 from src.logger import logging
 
-# Pandas library ko import kar rahe hain
-# Iska use dataset ko read aur manipulate karne ke liye hota hai
+# Import pandas to read and manipulate datasets
 import pandas as pd
 
-# train_test_split function ko import kar rahe hain
-# Iska use dataset ko training aur testing data mein divide karne ke liye hota hai
+# Import function to split dataset into training and testing sets
 from sklearn.model_selection import train_test_split
 
-# dataclass decorator ko import kar rahe hain
-# Isse configuration store karne wali class banana easy hota hai
+# Import dataclass for configuration classes
 from dataclasses import dataclass
 
-from src.components.data_transformation import DataTransformation
-from src.components.data_transformation import DataTransformationConfig
+# Import data transformation classes
+from src.components.data_transformation import (
+    DataTransformation,
+    DataTransformationConfig,
+)
 
-# @dataclass automatically constructor jaise methods generate karta hai
-# Is class mein hum data ingestion ke output file paths define karenge
+# Import model training classes
+from src.components.model_trainer import (
+    ModelTrainerConfig,
+    ModelTrainer,
+)
+
+
+# Store paths for the output files
 @dataclass
 class DataIngestionConfig:
-
-    # Training dataset ko save karne ka path
-    train_data_path: str = os.path.join('artifacts', 'train.csv')
-
-    # Testing dataset ko save karne ka path
-    test_data_path: str = os.path.join('artifacts', 'test.csv')
-
-    # Original dataset ko save karne ka path
-    raw_data_path: str = os.path.join('artifacts', 'data.csv')
+    train_data_path: str = os.path.join("artifacts", "train.csv")
+    test_data_path: str = os.path.join("artifacts", "test.csv")
+    raw_data_path: str = os.path.join("artifacts", "data.csv")
 
 
-# Data ingestion process ko manage karne ke liye class bana rahe hain
+# Handle the data ingestion process
 class DataIngestion:
 
-    # Constructor method object create hone par automatically execute hota hai
     def __init__(self):
-
-        # DataIngestionConfig class ka object create kar rahe hain
-        # Is object mein saare output file paths available honge
+        # Initialize the output file paths
         self.ingestion_config = DataIngestionConfig()
 
-    # Ye method data load, split aur save karne ka kaam karta hai
     def initiate_data_ingestion(self):
+        logging.info("Entered the data ingestion method")
 
-        # Log message record karte hain ki data ingestion process start ho raha hai
-        logging.info("Entered the data ingestion method or component")
-
-        # try block mein woh code likhte hain jisme error aa sakta hai
         try:
+            # Read the source dataset
+            df = pd.read_csv("stud.csv")
+            logging.info("Dataset loaded successfully")
 
-            # stud.csv file ko read karke Pandas DataFrame mein load karte hain
-            df = pd.read_csv('stud.csv')
-
-            # Log karte hain ki dataset successfully read ho gaya
-            logging.info('Read the dataset as dataframe')
-
-            # Artifacts folder create karte hain agar woh pehle se exist nahi karta
-            # exist_ok=True hone se existing folder par error nahi aata
+            # Create the artifacts folder if it does not exist
             os.makedirs(
                 os.path.dirname(self.ingestion_config.train_data_path),
-                exist_ok=True
+                exist_ok=True,
             )
 
-            # Original dataset ko artifacts/data.csv mein save karte hain
-            # index=False extra index column ko save hone se rokta hai
-            # header=True column names ko CSV mein save karta hai
+            # Save the original dataset
             df.to_csv(
                 self.ingestion_config.raw_data_path,
                 index=False,
-                header=True
+                header=True,
             )
 
-            # Log karte hain ki train-test split process start ho raha hai
-            logging.info("Train test split initiated")
+            logging.info("Starting train-test split")
 
-            # Dataset ko training aur testing sets mein divide karte hain
-            # test_size=0.2 ka matlab 20% testing aur 80% training data
-            # random_state=42 se split reproducible rehta hai
+            # Split data: 80% training and 20% testing
             train_set, test_set = train_test_split(
                 df,
                 test_size=0.2,
-                random_state=42
+                random_state=42,
             )
 
-            # Training dataset ko artifacts/train.csv mein save karte hain
-            # index=False extra index column ko remove karta hai
-            # header=True column names ko preserve karta hai
+            # Save training data
             train_set.to_csv(
                 self.ingestion_config.train_data_path,
                 index=False,
-                header=True
+                header=True,
             )
 
-            # Testing dataset ko artifacts/test.csv mein save karte hain
-            # Is file ka use baad mein model evaluation ke liye hoga
+            # Save testing data
             test_set.to_csv(
                 self.ingestion_config.test_data_path,
                 index=False,
-                header=True
+                header=True,
             )
 
-            # Log karte hain ki data ingestion successfully complete ho gaya
-            logging.info("Ingestion of the data is completed")
+            logging.info("Data ingestion completed successfully")
 
-            # Training aur testing files ke paths return karte hain
-            # Next component in paths ka use kar sakta hai
+            # Return the paths of the training and testing datasets
             return (
                 self.ingestion_config.train_data_path,
-                self.ingestion_config.test_data_path
+                self.ingestion_config.test_data_path,
             )
 
-        # Agar try block mein koi error aata hai, to except block execute hota hai
         except Exception as e:
-
-            # Error ko CustomException ke through detailed format mein raise karte hain
-            # sys se current exception ki details pass ki jaati hain
-            raise CustomException(e, sys)
+            logging.exception("Error occurred during data ingestion")
+            raise CustomException(e, sys) from e
 
 
-# Check karte hain ki file directly execute hui hai ya import ki gayi hai
-# Direct execution par hi neeche ka code run hoga
+# Execute the pipeline when this file is run directly
 if __name__ == "__main__":
+    try:
+        # Step 1: Data ingestion
+        obj = DataIngestion()
+        train_data, test_data = obj.initiate_data_ingestion()
 
-    # DataIngestion class ka object create karte hain
-    obj = DataIngestion()
+        # Step 2: Data transformation
+        data_transformation = DataTransformation()
+        train_arr, test_arr, _ = (
+            data_transformation.initiate_data_transformation(
+                train_data,
+                test_data,
+            )
+        )
 
-    # Data ingestion method call karte hain
-    # Ye dataset read, split aur save karega
-    train_data,test_data=obj.initiate_data_ingestion()
-    data_transformation=DataTransformation()
-    data_transformation.initiate_data_transformation(train_data,test_data)
+        # Step 3: Model training
+        model_trainer = ModelTrainer()
+        model_score = model_trainer.initiate_model_trainer(
+            train_arr,
+            test_arr,
+        )
+
+        print("Model training completed.")
+        print("Model score:", model_score)
+
+    except Exception as e:
+        logging.exception("Pipeline execution failed")
+        raise

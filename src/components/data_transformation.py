@@ -155,8 +155,7 @@ class DataTransformation:
 
             # Training data se input features alag karte hain
             input_feature_train_df = train_df.drop(
-                columns=[target_column_name],
-                axis=1,
+                columns=[target_column_name]
             )
 
             # Training data ka target alag karte hain
@@ -164,8 +163,7 @@ class DataTransformation:
 
             # Testing data se input features alag karte hain
             input_feature_test_df = test_df.drop(
-                columns=[target_column_name],
-                axis=1,
+                columns=[target_column_name]
             )
 
             # Testing data ka target alag karte hain
